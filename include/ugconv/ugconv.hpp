@@ -88,7 +88,7 @@ namespace ugconv {
 	}
 	
 	struct context {
-		context(requester *req) : req(req) {}
+		context(requester &req) : req(&req) {}
 		
 #ifndef UGCONV_NO_CURL
 		context() : default_requester(std::make_unique<curl>()), req(default_requester.get()) {}
@@ -157,14 +157,6 @@ namespace ugconv {
 		
 		void set_zip(const fs::path &zip) {
 			param_zip = zip;
-		}
-		
-		static std::string gen_err_message(const response &resp) {
-			if (resp.code == 0) {
-				return resp.message;
-			}
-			
-			return "Request returned " + std::to_string(resp.code);
 		}
 		
 		result convert(const fs::path &dest, format fmt) {
@@ -466,6 +458,14 @@ namespace ugconv {
 			opts.cookies = cookies;
 			
 			return req->get(url, opts);
+		}
+		
+		static std::string gen_err_message(const response &resp) {
+			if (resp.code == 0) {
+				return resp.message;
+			}
+			
+			return "Request returned " + std::to_string(resp.code);
 		}
 		
 		std::string user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0";
