@@ -3,8 +3,9 @@ INCDIR		:= include
 SHORTNAME	:= ugconv
 BLDDIR		:= build
 SRCDIR		:= src
+INSTALLDIR	:= /usr/local/bin/
 
-LIBS :=
+LIBS := -lcurl
 
 # Note: Build type is release by default
 
@@ -27,6 +28,7 @@ LDFLAGS_DEBUG       :=
 MKDIR := mkdir -p
 RM    := rm -f
 RMDIR := rm -rf
+CP    := cp
 
 HDRS := $(wildcard $(INCDIR)/$(SHORTNAME)/*.hpp)
 SRCS := $(wildcard $(SRCDIR)/*.cxx)
@@ -63,7 +65,11 @@ $(BLDDIR)/%.o: $(SRCDIR)/%.cxx $(HDRS) makefile
 $(BLDDIR):
 	$(MKDIR) $(BLDDIR)
 
+install:
+	$(MKDIR) $(INSTALLDIR)
+	$(CP) $(BLDDIR)/$(PROGNAME) $(INSTALLDIR)/
+
 clean:
 	$(RMDIR) $(BLDDIR)
 
-.PHONY: all release debug clean
+.PHONY: all release debug install clean
