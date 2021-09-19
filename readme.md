@@ -125,7 +125,7 @@ Basic example usage:
 		}
 	}
 
-When `ugconv::convert` returns, the ID/URL, meta, and zip parameters are cleared.
+When `ugconv::context::convert` returns, the ID/URL, meta, and zip parameters are cleared.
 
 For further usage, read the public definitions, functions, and methods in `ugconv.hpp`.
 
