@@ -125,6 +125,8 @@ Basic example usage:
 		}
 	}
 
+When `ugconv::convert` returns, the ID/URL, meta, and zip parameters are cleared.
+
 For further usage, read the public definitions, functions, and methods in `ugconv.hpp`.
 
 The `context` object is **not** thread-safe. If you wish to run multiple download/conversion jobs in parallel, you must use multiple context objects.

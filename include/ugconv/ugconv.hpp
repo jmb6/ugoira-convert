@@ -176,6 +176,9 @@ namespace ugconv {
 			
 			scope_guard sg = [this] {
 				teardown_temp_dir();
+				param_post_id = {};
+				param_meta = {};
+				param_zip = {};
 			};
 			
 			if (!param_meta) {
