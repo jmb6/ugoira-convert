@@ -65,6 +65,18 @@ namespace ugconv {
 		return x;
 	}
 	
+	template <typename Fn>
+	struct scope_guard {
+		scope_guard(Fn fn) : fn(std::move(fn)) {}
+		
+		~scope_guard() {
+			fn();
+		}
+		
+	private:
+		Fn fn;
+	};
+	
 	constexpr std::string_view extension(format fmt) {
 		switch (fmt) {
 			case FMT_GIF:
@@ -160,7 +172,11 @@ namespace ugconv {
 		}
 		
 		result convert(const fs::path &dest, format fmt) {
-			auto tdg = tempdir_guard();
+			setup_temp_dir();
+			
+			scope_guard sg = [this] {
+				teardown_temp_dir();
+			};
 			
 			if (!param_meta) {
 				if (!param_post_id) {
@@ -227,23 +243,6 @@ namespace ugconv {
 			std::string zip_url;
 			std::vector<frame> frames;
 		};
-		
-		struct tempdir_guard_struct {
-			tempdir_guard_struct(context &ctx) : ctx(&ctx) {
-				ctx.ref_temp_dir();
-			}
-			
-			~tempdir_guard_struct() {
-				ctx->unref_temp_dir();
-			}
-			
-		private:
-			context *ctx;
-		};
-		
-		tempdir_guard_struct tempdir_guard() {
-			return tempdir_guard_struct{*this};
-		}
 		
 		std::optional<meta_info> get_meta_info(const json &meta) {
 			meta_info mi;
@@ -354,7 +353,7 @@ namespace ugconv {
 		}
 		
 		result do_convert(const meta_info &mi, const fs::path &zip, const fs::path &dest, format fmt) {
-			auto tdg = tempdir_guard();
+			assert(!temp_dir.empty());
 			auto frames_path = temp_dir / "frames";
 			
 			if (!fs::exists(zip)) {
@@ -408,13 +407,7 @@ namespace ugconv {
 			return out;
 		}
 		
-		void ref_temp_dir() {
-			temp_refs++;
-			
-			if (temp_refs > 1) {
-				return;
-			}
-			
+		void setup_temp_dir() {
 			std::mt19937 rng{std::random_device{}()};
 			
 			do {
@@ -425,13 +418,7 @@ namespace ugconv {
 			} while (!fs::create_directory(temp_dir));
 		}
 		
-		void unref_temp_dir() {
-			temp_refs--;
-			
-			if (temp_refs > 0) {
-				return;
-			}
-			
+		void teardown_temp_dir() {
 			if (temp_dir.empty()) {
 				return;
 			}
@@ -476,7 +463,6 @@ namespace ugconv {
 		std::optional<fs::path> param_zip;
 		
 		fs::path temp_dir;
-		unsigned temp_refs = 0;
 		
 		std::unique_ptr<requester> default_requester;
 		requester *req = nullptr;
