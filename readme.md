@@ -69,7 +69,7 @@ In the above two cases, ugoira-convert simply checks if the path refers to a dir
 
 Pixiv requires you to be signed in to gain access to R-18 works.
 
-To do this, sign into your Pixiv account and and copy-paste the value of the PHPSESSID cookie. Then when downloading, pass this into ugoira-convert using the `-s` flag:
+To do this, sign into your Pixiv account and copy-paste the value of the PHPSESSID cookie. Then when downloading, pass this into ugoira-convert using the `-s` flag:
 
 	ugoira-convert <URL> -s <SESSION-ID>
 
@@ -85,7 +85,7 @@ If you know a better way, let me know.
 
 Options:
 
-- `-u <STRING>`: Set user-agent. This should be a normal browser useragent. Be default it is `Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0`. Default libcurl user agent is blocked by Pixiv.
+- `-u <STRING>`: Set user-agent. This should be a normal browser useragent. By default it is `Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0`. Default libcurl user agent is blocked by Pixiv.
 - `-s <STRING>`: Set PHPSESSID cookie. Used for user authentication. (See R-18 works section).
 - `-fmt <STRING>`: Set the output format to convert to. Valid values are `webm` and `gif`.
 - `-meta <PATH>`: Path to an ugoira_meta.json file. If this is provided ugoira-convert will use this file directly instead of fetching it from Pixiv. The zip file containing the actual frames will still be fetched from Pixiv though unless `-zip` is also given.
