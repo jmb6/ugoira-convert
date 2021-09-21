@@ -59,7 +59,7 @@ debug: $(BLDDIR)/$(PROGNAME)
 $(BLDDIR)/$(PROGNAME): $(BLDDIR) $(OBJS)
 	+$(CXX) $(OBJS) $(CXXFLAGS) $(LDFLAGS)
 
-$(BLDDIR)/%.o: $(SRCDIR)/%.cxx $(HDRS) makefile
+$(BLDDIR)/%.o: $(SRCDIR)/%.cxx $(BLDDIR) $(HDRS) makefile
 	$(CXX) $< $(CXXFLAGS) -c -o $@
 
 $(BLDDIR):
