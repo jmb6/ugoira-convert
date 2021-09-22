@@ -91,6 +91,7 @@ Options:
 - `-meta <PATH>`: Path to an ugoira_meta.json file. If this is provided ugoira-convert will use this file directly instead of fetching it from Pixiv. The zip file containing the actual frames will still be fetched from Pixiv though unless `-zip` is also given.
 - `-zip <PATH>`: Path to a zip file containing ugoira frames. This requires `-meta` to also be passed. Tells ugoira-convert to use this zip file instead of downloading it from Pixiv.
 - `-id <ID>`: Artwork ID to download. This is simply an alternative to supplying the whole URL. If this option is supplied then there is no `[URL]` parameter.
+- `-q`: Be quiet.
 
 # Header-only library
 

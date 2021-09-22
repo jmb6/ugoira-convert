@@ -48,6 +48,17 @@ namespace ugconv {
 		FMT_WEBM,
 	};
 	
+	enum progress_type {
+		PROG_MESSAGE,
+		PROG_BAR,
+	};
+	
+	// If progress_type is PROG_MESSAGE, only msg is valid, and the off_t's are 0.
+	// If progress_type is PROG_BAR, then progress represents a progress bar, bytes_total refers to amount of bytes to be fetch, and bytes_now refers to amount of bytes we have fetched so far. Multiple PROG_BAR's will be sent until the transfer is completed. Only the first PROG_BAR of the sequence will contain a message.
+	// If total is unknown, (is common at the beginning of downloads), bytes_total will be 0, be prepared to handle this case.
+	// At the end of a PROG_BAR sequence, a PROG_MESSAGE with msg.empty() == true will be sent.
+	using progress_function = void(progress_type, std::string msg, off_t bytes_total, off_t bytes_now);
+	
 	inline fs::path operator+(fs::path a, std::string_view b) {
 		a += b;
 		return a;
@@ -186,6 +197,8 @@ namespace ugconv {
 					return {ERR_USAGE, "Post ID must be given if meta file is not"};
 				}
 				
+				progress("Downloading ugoira_meta");
+				
 				auto url = "https://www.pixiv.net/ajax/illust/" + std::to_string(*param_post_id) + "/ugoira_meta?lang=en";
 				auto resp = pixiv_request(url);
 				
@@ -209,7 +222,9 @@ namespace ugconv {
 			}
 			
 			if (!param_zip) {
-				auto resp = pixiv_request(mi->zip_url);
+				progress(0, 0, "Downloading ugoira.zip");
+				
+				auto resp = pixiv_request(mi->zip_url, true);
 				
 				if (resp.code != 200) {
 					return {ERR_REQ_FAILED, "Failed to fetch ugoira frames (zip): " + gen_err_message(resp)};
@@ -234,6 +249,14 @@ namespace ugconv {
 		
 		auto post_id() const {
 			return param_post_id;
+		}
+		
+		void show_progress(bool yn) {
+			showprogress = yn;
+		}
+		
+		void set_progressfn(std::function<progress_function> fn) {
+			progressfn = std::move(fn);
 		}
 		
 	private:
@@ -377,6 +400,8 @@ namespace ugconv {
 			auto dest_part = dest + ".part";
 			auto cmd = gen_convert_cmd(concat_path, dest_part, fmt, fs);
 			
+			progress("Encoding to " + extension(fmt));
+			
 			if (!runshell(std::move(cmd))) {
 				return {ERR_CMD_FAILED, "ffmpeg command failed"};
 			}
@@ -439,7 +464,7 @@ namespace ugconv {
 			return ss.str();
 		}
 		
-		response pixiv_request(std::string_view url) {
+		response pixiv_request(std::string_view url, bool prog = false) {
 			auto cookies = gen_cookies();
 			
 			request_opts opts;
@@ -447,7 +472,19 @@ namespace ugconv {
 			opts.user_agent = user_agent;
 			opts.cookies = cookies;
 			
-			return req->get(url, opts);
+			if (prog) {
+				opts.progressfn = [this](off_t total, off_t now) {
+					progress(total, now);
+				};
+			}
+			
+			auto r = req->get(url, opts);
+			
+			if (prog) {
+				progress({});
+			}
+			
+			return r;
 		}
 		
 		static std::string gen_err_message(const response &resp) {
@@ -457,6 +494,21 @@ namespace ugconv {
 			
 			return "Request returned " + std::to_string(resp.code);
 		}
+		
+		void progress(std::string msg) {
+			if (showprogress && progressfn) {
+				progressfn(PROG_MESSAGE, std::move(msg), 0, 0);
+			}
+		}
+		
+		void progress(off_t total, off_t now, std::string msg = {}) {
+			if (showprogress && progressfn) {
+				progressfn(PROG_BAR, std::move(msg), total, now);
+			}
+		}
+		
+		bool showprogress = true;
+		std::function<progress_function> progressfn;
 		
 		std::string user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0";
 		std::string session_id;

@@ -21,6 +21,9 @@ namespace ugconv {
 			curl_easy_setopt(ctx, CURLOPT_REFERER, std::string{opts.referer}.c_str());
 			curl_easy_setopt(ctx, CURLOPT_COOKIE, std::string{opts.cookies}.c_str());
 			curl_easy_setopt(ctx, CURLOPT_USERAGENT, std::string{opts.user_agent}.c_str());
+			curl_easy_setopt(ctx, CURLOPT_NOPROGRESS, 0);
+			curl_easy_setopt(ctx, CURLOPT_XFERINFOFUNCTION, progressfunction);
+			curl_easy_setopt(ctx, CURLOPT_XFERINFODATA, &opts);
 			
 			auto err = curl_easy_perform(ctx);
 			
@@ -48,6 +51,16 @@ namespace ugconv {
 			}
 			
 			return sz;
+		}
+		
+		static int progressfunction(void *p, curl_off_t total, curl_off_t now, curl_off_t, curl_off_t) {
+			auto &ro = *reinterpret_cast<request_opts*>(p);
+			
+			if (ro.progressfn) {
+				ro.progressfn(total, now);
+			}
+			
+			return 0;
 		}
 		
 		CURL *ctx;

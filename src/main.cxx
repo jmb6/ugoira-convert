@@ -19,6 +19,7 @@ static std::unordered_map<std::string_view, option_info> option_spec = {
 	{"-meta", {true}},
 	{"-zip", {true}},
 	{"-id", {true}},
+	{"-q", {false}},
 };
 
 struct options {
@@ -199,6 +200,24 @@ int main(int argc, char **argv) {
 			out = std::move(name);
 		}
 	}
+	
+	std::string progbar_msg;
+	
+	ctx.set_progressfn([&progbar_msg](auto type, auto msg, auto total, auto now) {
+		if (type == ugconv::PROG_MESSAGE) {
+			std::cout << msg << '\n';
+		}
+		else if (type == ugconv::PROG_BAR) {
+			if (!msg.empty()) {
+				progbar_msg = std::move(msg);
+			}
+			
+			int percent = total ? ((float(now) / total) * 100) : 0;
+			std::cout << "\r[" << percent << "%] " << progbar_msg << std::flush;
+		}
+	});
+	
+	ctx.show_progress(!opts.flags.contains("-q"));
 	
 	if (auto res = ctx.convert(out, fmt); !res) {
 		std::cout << res.message << '\n';
