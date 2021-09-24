@@ -56,10 +56,10 @@ debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
 debug: LDFLAGS += $(LDFLAGS_DEBUG)
 debug: $(BLDDIR)/$(PROGNAME)
 
-$(BLDDIR)/$(PROGNAME): $(BLDDIR) $(OBJS)
+$(BLDDIR)/$(PROGNAME): $(OBJS) | $(BLDDIR)
 	+$(CXX) $(OBJS) $(CXXFLAGS) $(LDFLAGS)
 
-$(BLDDIR)/%.o: $(SRCDIR)/%.cxx $(BLDDIR) $(HDRS) makefile
+$(BLDDIR)/%.o: $(SRCDIR)/%.cxx $(HDRS) makefile | $(BLDDIR)
 	$(CXX) $< $(CXXFLAGS) -c -o $@
 
 $(BLDDIR):
