@@ -197,10 +197,10 @@ namespace ugconv {
 					return {ERR_USAGE, "Post ID must be given if meta file is not"};
 				}
 				
-				progress("Downloading ugoira_meta");
+				progress(0, 0, "Downloading ugoira_meta");
 				
 				auto url = "https://www.pixiv.net/ajax/illust/" + std::to_string(*param_post_id) + "/ugoira_meta?lang=en";
-				auto resp = pixiv_request(url);
+				auto resp = pixiv_request(url, true);
 				
 				if (auto r = set_meta(std::string_view{resp.body}); r.err != ERR_OK) {
 					if (resp.code != 200) {
@@ -481,6 +481,9 @@ namespace ugconv {
 			auto r = req->get(url, opts);
 			
 			if (prog) {
+				// libcurl for some reason doesn't send a final progress event to make it 100%. so send it ourselves.
+				progress(r.body.size(), r.body.size());
+				// and then signal the end of the operation.
 				progress({});
 			}
 			
