@@ -44,6 +44,12 @@ By ID:
 
 	ugoira-convert -id <ID>
 
+From local .ugoira file:
+
+	ugoira-convert -ugoira <PATH>
+
+Zero web requests will be made to Pixiv in this case.
+
 From local ugoira_meta.json file:
 
 	ugoira-convert -meta <PATH>
