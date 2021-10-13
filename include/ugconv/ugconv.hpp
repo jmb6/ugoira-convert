@@ -167,6 +167,10 @@ namespace ugconv {
 			return {};
 		}
 		
+		void set_ugoira(fs::path ugoira) {
+			param_ugoira = std::move(ugoira);
+		}
+		
 		result set_meta(std::string_view meta) {
 			try {
 				param_meta = json::parse(meta);
@@ -178,8 +182,8 @@ namespace ugconv {
 			return {};
 		}
 		
-		void set_zip(const fs::path &zip) {
-			param_zip = zip;
+		void set_zip(fs::path zip) {
+			param_zip = std::move(zip);
 		}
 		
 		result convert(const fs::path &dest, format fmt) {
@@ -188,9 +192,32 @@ namespace ugconv {
 			scope_guard sg = [this] {
 				teardown_temp_dir();
 				param_post_id = {};
+				param_ugoira = {};
 				param_meta = {};
 				param_zip = {};
 			};
+			
+			bool unzipped = false;
+			auto frames_path = temp_dir / "frames";
+			
+			if (param_ugoira) {
+				set_zip(*param_ugoira);
+				
+				if (auto res = unzip(*param_zip, frames_path); !res) {
+					return res;
+				}
+				
+				unzipped = true;
+				auto meta_path = frames_path / "animation.json";
+				
+				if (!fs::exists(meta_path)) {
+					return {ERR_META_CANTOPEN, "Ugoira file does not contain an animation.json"};
+				}
+				
+				if (auto res = set_meta(meta_path); !res) {
+					return res;
+				}
+			}
 			
 			if (!param_meta) {
 				if (!param_post_id) {
@@ -211,7 +238,7 @@ namespace ugconv {
 				}
 			}
 			
-			if (param_meta->at("error").get<bool>()) {
+			if (param_meta->contains("error") && param_meta->at("error").get<bool>()) {
 				return {ERR_REQ_FAILED, "Pixiv: " + param_meta->at("message").get<std::string>()};
 			}
 			
@@ -236,7 +263,13 @@ namespace ugconv {
 				param_zip = zip_path;
 			}
 			
-			return do_convert(*mi, *param_zip, dest, fmt);
+			if (!unzipped) {
+				if (auto res = unzip(*param_zip, frames_path); !res) {
+					return res;
+				}
+			}
+			
+			return do_convert(*mi, frames_path, dest, fmt);
 		}
 		
 		void set_user_agent(std::string ua) {
@@ -270,11 +303,31 @@ namespace ugconv {
 			std::vector<frame> frames;
 		};
 		
+		result unzip(const fs::path &zip, const fs::path &dest) {
+			if (!fs::exists(zip)) {
+				return {ERR_ZIP_CANTOPEN, "File doesn't exist: " + zip.native()};
+			}
+			
+			fs::create_directory(dest);
+			
+			if (!run_unzip(zip, dest)) {
+				return {ERR_CMD_FAILED, "unzip command failed"};
+			}
+			
+			return {};
+		}
+		
 		std::optional<meta_info> get_meta_info(const json &meta) {
 			meta_info mi;
 			
 			try {
-				auto &body = meta.at("body");
+				// Meta files fetched directly from pixiv are wrapped in more JSON containing the error code,
+				// and the actual meta file is in body. But PixivUtil2 only outputs the value of body without
+				// the wrapping JSON, so support both cases.
+				auto &body = meta.contains("body") ?
+				             meta.at("body") :
+				             meta;
+				
 				body.at("originalSrc").get_to(mi.zip_url);
 				
 				auto &frames = body.at("frames");
@@ -378,19 +431,8 @@ namespace ugconv {
 			return ss.str();
 		}
 		
-		result do_convert(const meta_info &mi, const fs::path &zip, const fs::path &dest, format fmt) {
+		result do_convert(const meta_info &mi, const fs::path &frames_path, const fs::path &dest, format fmt) {
 			assert(!temp_dir.empty());
-			auto frames_path = temp_dir / "frames";
-			
-			if (!fs::exists(zip)) {
-				return {ERR_ZIP_CANTOPEN, "Zip file doesn't exist: " + zip.string()};
-			}
-			
-			fs::create_directory(frames_path);
-			
-			if (!run_unzip(zip, frames_path)) {
-				return {ERR_CMD_FAILED, "unzip command failed"};
-			}
 			
 			auto fs = get_frame_stats(mi);
 			
@@ -517,6 +559,7 @@ namespace ugconv {
 		std::string session_id;
 		
 		std::optional<uint64_t> param_post_id;
+		std::optional<fs::path> param_ugoira;
 		std::optional<json> param_meta;
 		std::optional<fs::path> param_zip;
 		

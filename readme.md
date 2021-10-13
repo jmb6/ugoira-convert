@@ -4,10 +4,11 @@ This is a command-line program and a C++ header-only library for downloading and
 
 It currently supports the following features:
 
-- Downloading from pixiv by artwork ID or URL.
+- Downloading and converting from pixiv by artwork ID or URL.
 - Converting to WebM.
 - Converting to Gif.
-- Converting from local ugoira files (zip + json file).
+- Converting from local PixivUtil2 .ugoira file.
+- Converting from local zip + json file.
 
 # Dependencies
 

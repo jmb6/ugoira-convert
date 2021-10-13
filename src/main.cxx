@@ -16,6 +16,7 @@ static std::unordered_map<std::string_view, option_info> option_spec = {
 	{"-u", {true}},
 	{"-s", {true}},
 	{"-fmt", {true}},
+	{"-ugoira", {true}},
 	{"-meta", {true}},
 	{"-zip", {true}},
 	{"-id", {true}},
@@ -119,9 +120,21 @@ int main(int argc, char **argv) {
 		ctx.set_session_id(std::string{*s});
 	}
 	
+	bool have_ugoira = false;
+	
+	if (auto ugoira = find(opts.flags, "-ugoira")) {
+		ctx.set_ugoira(fs::path{*ugoira});
+		have_ugoira = true;
+	}
+	
 	bool have_meta = false;
 	
 	if (auto meta = find(opts.flags, "-meta")) {
+		if (have_ugoira) {
+			std::cout << "-meta doesn't make sense with -ugoira\n";
+			return 1;
+		}
+		
 		if (auto res = ctx.set_meta(fs::path{*meta}); !res) {
 			std::cout << res.message << '\n';
 			return 1;
@@ -142,6 +155,11 @@ int main(int argc, char **argv) {
 	bool have_id = false;
 	
 	if (auto idstr = find(opts.flags, "-id")) {
+		if (have_ugoira) {
+			std::cout << "-id doesn't make sense with -ugoira\n";
+			return 1;
+		}
+		
 		if (have_meta) {
 			std::cout << "-id doesn't make sense with -meta\n";
 			return 1;
@@ -160,7 +178,7 @@ int main(int argc, char **argv) {
 	
 	size_t arg_enum = 0;
 	
-	if (!have_meta && !have_id) {
+	if (!have_meta && !have_id && !have_ugoira) {
 		if (opts.args.empty()) {
 			std::cout << "Expected arguments\n";
 			return 1;
