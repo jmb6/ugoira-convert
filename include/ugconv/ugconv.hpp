@@ -388,7 +388,16 @@ namespace ugconv {
 				out << "file '" << (frames_path / f.name).string() << "'\n";
 				
 				if (!fs.is_constant) {
-					out << "duration " << (f.delay / 1000.f) << '\n';
+					out << "duration ";
+					
+					if (fmt == FMT_WEBM) {
+						out << f.delay;
+					}
+					else {
+						out << (f.delay / 1000.f);
+					}
+					
+					out << '\n';
 				}
 			}
 			
@@ -425,6 +434,10 @@ namespace ugconv {
 			}
 			else {
 				ss << "-r " << fps_limit << ' ';
+			}
+			
+			if (fmt == FMT_WEBM && !fs.is_constant) {
+				ss << "-enc_time_base 1/1000 -vf 'settb=1/1000,setpts=PTS*0.001' ";
 			}
 			
 			ss << '\'' << dest.string() << '\'';
