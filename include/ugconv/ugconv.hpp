@@ -415,6 +415,7 @@ namespace ugconv {
 				ss << "-f webm -c:v libvpx -b:v 10M -crf 4 ";
 			}
 			
+			ss << "-fflags bitexact ";
 			ss << "-vsync " << (fs.is_constant ? "cfr" : "vfr") << ' ';
 			
 			int fps_limit = (fmt == FMT_GIF ? 50 : 60);
