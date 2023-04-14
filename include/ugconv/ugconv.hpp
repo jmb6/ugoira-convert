@@ -427,13 +427,10 @@ namespace ugconv {
 			ss << "-fflags bitexact ";
 			ss << "-vsync " << (fs.is_constant ? "cfr" : "vfr") << ' ';
 			
-			int fps_limit = (fmt == FMT_GIF ? 50 : 60);
+			float fps_limit = (fmt == FMT_GIF ? 50.f : 60.f);
 			
-			if (fs.is_constant && fs.const_fps <= fps_limit) {
-				ss << "-r " << fs.const_fps << ' ';
-			}
-			else {
-				ss << "-r " << fps_limit << ' ';
+			if (fs.is_constant) {
+				ss << "-r " << std::min(fs.const_fps, fps_limit) << ' ';
 			}
 			
 			if (fmt == FMT_WEBM && !fs.is_constant) {
