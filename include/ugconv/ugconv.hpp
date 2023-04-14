@@ -292,6 +292,8 @@ namespace ugconv {
 			progressfn = std::move(fn);
 		}
 		
+		bool print_commands = false;
+		
 	private:
 		struct frame {
 			std::string name;
@@ -464,11 +466,15 @@ namespace ugconv {
 			return {};
 		}
 		
-		static bool runshell(std::string cmd) {
+		bool runshell(std::string cmd) {
+			if (print_commands) {
+				std::cout << cmd << '\n';
+			}
+			
 			return system(cmd.c_str()) == 0;
 		}
 		
-		static bool run_unzip(fs::path zip, fs::path dest) {
+		bool run_unzip(fs::path zip, fs::path dest) {
 			std::stringstream ss;
 			ss << "unzip -q " << '\'' << zip.string() << '\'' << " -d " << '\'' << dest.string() << '\'';
 			return runshell(ss.str());

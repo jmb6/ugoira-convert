@@ -21,6 +21,7 @@ static std::unordered_map<std::string_view, option_info> option_spec = {
 	{"-zip", {true}},
 	{"-id", {true}},
 	{"-q", {false}},
+	{"-v", {false}},
 };
 
 struct options {
@@ -111,6 +112,10 @@ int main(int argc, char **argv) {
 	}
 	
 	ugconv::context ctx;
+	
+	if (opts.flags.contains("-v")) {
+		ctx.print_commands = true;
+	}
 	
 	if (auto ua = find(opts.flags, "-u")) {
 		ctx.set_user_agent(std::string{*ua});
